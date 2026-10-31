@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from collections.abc import Iterator
 
 from sqlalchemy import MetaData, create_engine, text
@@ -45,3 +46,13 @@ def get_db() -> Iterator[Session]:
 def check_db() -> None:
     with get_engine().connect() as conn:
         conn.execute(text("SELECT 1"))
+
+
+@contextmanager
+def unit_of_work(db: Session) -> Iterator[Session]:
+    try:
+        yield db
+        db.commit()
+    except BaseException:
+        db.rollback()
+        raise

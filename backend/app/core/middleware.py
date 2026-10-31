@@ -27,4 +27,6 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             )
             request_id_var.reset(token)
         response.headers["X-Request-ID"] = request_id
+        if "authorization" in request.headers or request.url.path.startswith("/api/v1/auth/"):
+            response.headers["Cache-Control"] = "no-store"
         return response
