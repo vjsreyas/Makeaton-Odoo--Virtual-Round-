@@ -2,6 +2,8 @@
 .env.*
 !.env.example
 docs
+*.md
+!README.md
 __pycache__/
 *.py[cod]
 .venv/
