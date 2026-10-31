@@ -1,0 +1,6 @@
+{
+  "name": "Brightloop — Kinetic Financial Engine",
+  "description": "High-performance enterprise billing, automated invoicing runs, subscription lifecycle management, and revenue operations cockpit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
