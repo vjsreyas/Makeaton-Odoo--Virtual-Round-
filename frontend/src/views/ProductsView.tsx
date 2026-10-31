@@ -1,3 +1,5 @@
+import { money } from '../lib/india';
+import { DemoMetrics } from '../components/DemoMetrics';
 import { demoNotice } from '../mock/demo';
 import React, { useState } from 'react';
 import { 
@@ -52,7 +54,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
     const newV: ProductVariant = {
       id: `v-${Date.now()}`,
       attribute: 'Addon',
-      value: 'Feature Expansion',
+      value: 'Additional storage',
       extraPrice: 150.00,
       effectivePrice: salesBasePrice + 150.00
     };
@@ -76,13 +78,12 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
     setProducts(products.map(p => p.id === updated.id ? updated : p));
     setSelectedProduct(updated);
     onUpdateProduct(updated);
-    demoNotice(`Product ${productName} and ${variants.length} dynamic variants saved to the local demo catalog.`);
   };
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2
     }).format(val);
   };
@@ -123,13 +124,13 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
               const newP: ProductItem = {
                 id: `prod-${Date.now()}`,
                 sku: `SKU-${Math.floor(Math.random() * 9000) + 1000}`,
-                name: 'New Custom Tier',
+                name: 'New Business Plan',
                 type: 'Software Platform',
                 salesBasePrice: 1999.00,
                 costPrice: 500.00,
                 marginPercent: 75.0,
                 variantsCount: 1,
-                internalNotes: 'Custom enterprise tier',
+                internalNotes: 'Monthly software plan for a small business.',
                 variants: [
                   { id: 'v-new', attribute: 'Tier', value: 'Default', extraPrice: 0, effectivePrice: 1999.00 }
                 ]
@@ -145,89 +146,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
         </div>
       </div>
 
-      {/* 4 Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Active Products</span>
-              <Package className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              34 <span className="text-xs font-mono text-slate-400 font-normal">SKUs</span>
-            </div>
-            <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              Live in production catalog
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-400">Sync status</span>
-            <span className="font-bold text-emerald-700 font-mono">100% HEALTHY</span>
-          </div>
-        </div>
-
-        {/* Card 2 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Configured Variants</span>
-              <Sliders className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              92 <span className="text-xs text-emerald-600 font-normal font-sans">+4 this week</span>
-            </div>
-            <div className="text-xs text-slate-500 mt-1">
-              Active variations generated
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-mono">
-            <span>Recursion cap</span>
-            <span className="font-bold text-slate-800">12 ATTR / SKU</span>
-          </div>
-        </div>
-
-        {/* Card 3 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Average Unit Value</span>
-              <TrendingUp className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              $1,420.00 <span className="text-xs text-slate-400 font-mono font-normal">USD</span>
-            </div>
-            <div className="text-xs text-slate-500 mt-1">
-              Weighted baseline across tiers
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-400">MRR Velocity</span>
-            <span className="font-mono font-bold text-emerald-600">+$48.2k / MO</span>
-          </div>
-        </div>
-
-        {/* Card 4 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Cost vs Sales Margin</span>
-              <span className="px-2 py-0.5 rounded-full bg-[#c1f100] text-[#171c20] text-[10px] font-bold">
-                Healthy Margin
-              </span>
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              74.2%
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Min Target:</span>
-            <span className="font-mono font-bold text-slate-800">+26.2% OVER 50% FLOOR</span>
-          </div>
-        </div>
-      </div>
-
+      <DemoMetrics items={[{ label: 'Products', value: products.length, hint: 'Software and support for small businesses' },{ label: 'Price variants', value: products.reduce((sum,p) => sum + p.variants.length,0), hint: 'Optional additions to the base price' },{ label: 'Lowest base price', value: money(Math.min(...products.map(p => p.salesBasePrice))), hint: 'Before GST; billing period is set by the plan' },{ label: 'Odoo variant', value: money(560), hint: 'Added per ERP user to the ₹5,000 base price' }]} />
       {/* Split View: Catalog Entities Table & Right Configurator Drawer */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Catalog Entities (7 cols) */}
@@ -295,7 +214,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           <div className="mt-4 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-xs text-slate-600">
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <p className="text-[11px] leading-relaxed">
-              <span className="font-bold text-slate-800">Automated Subscription Safeguard:</span> Products bound to existing recurring invoices or live customer contracts cannot be deleted or archived without migration run. Base price alterations propagate on customer renewal boundaries.
+              <span className="font-bold text-slate-800">Automated Subscription Safeguard:</span> Product prices are used by the linked plan when creating a new subscription. Demo changes affect this tab only.
             </p>
           </div>
         </div>
@@ -348,7 +267,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
               <div>
                 <label className="block text-slate-400 font-bold mb-1">Sales Base Price</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">₹</span>
                   <input
                     type="number"
                     value={salesBasePrice}
@@ -360,7 +279,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
               <div>
                 <label className="block text-slate-400 font-bold mb-1">Cost Price</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">₹</span>
                   <input
                     type="number"
                     value={costPrice}

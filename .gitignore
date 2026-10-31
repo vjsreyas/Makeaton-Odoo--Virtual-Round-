@@ -16,6 +16,9 @@ node_modules/
 frontend/dist/
 .DS_Store
 .idea/
+qa
 .vscode/
 *.swp
 backend/tests
+frontend/design-reference
+scripts

@@ -130,3 +130,10 @@ export async function request<T>(method: string, path: string, options: RequestO
 export function requestPaged<T>(path: string, query?: Query, signal?: AbortSignal): Promise<Paged<T>> {
   return requestRaw<Paged<T>>('GET', path, { query, signal });
 }
+
+export async function fetchText(path: string): Promise<string> {
+  const token = hooks.getToken();
+  const response = await fetch(`${getApiBaseUrl()}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!response.ok) throw await toApiError(response);
+  return response.text();
+}

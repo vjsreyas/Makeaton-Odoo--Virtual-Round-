@@ -12,7 +12,9 @@ def run() -> None:
     if not settings.seed_demo:
         logger.info("demo seed skipped (SEED_DEMO is false)")
         return
-    logger.warning("SEED_DEMO is true but no demo data is defined yet (WP-DEMO)")
+    from app.tools.seed_india import main
+    main()
+    logger.info("Indian presentation accounts and database records seeded")
 
 
 if __name__ == "__main__":

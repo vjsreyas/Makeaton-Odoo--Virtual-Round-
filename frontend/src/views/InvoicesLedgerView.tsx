@@ -1,3 +1,6 @@
+import { money } from '../lib/india';
+import { DemoMetrics } from '../components/DemoMetrics';
+import { invoiceSummary } from '../mock/summary';
 import { demoNotice } from '../mock/demo';
 import React, { useState, useMemo } from 'react';
 import { 
@@ -80,9 +83,9 @@ export const InvoicesLedgerView: React.FC<InvoicesLedgerViewProps> = ({
   }, [invoices, selectedInvoiceIds]);
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2
     }).format(val);
   };
@@ -112,13 +115,13 @@ export const InvoicesLedgerView: React.FC<InvoicesLedgerViewProps> = ({
               LEDGER TERMINAL
             </span>
             <span className="text-slate-400 text-xs">•</span>
-            <span className="text-slate-500 text-xs font-mono">Real-Time Sync 0.4s ago</span>
+            <span className="text-slate-500 text-xs font-mono">INR • IST</span>
           </div>
           <h1 className="text-3xl font-extrabold text-[#171c20] tracking-tight">
             Invoices Ledger
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Automated invoicing runs, dunning tracking, and receivables reconciliation.
+            See each invoice, the amount received, and what the customer still owes.
           </p>
         </div>
 
@@ -148,113 +151,7 @@ export const InvoicesLedgerView: React.FC<InvoicesLedgerViewProps> = ({
         </div>
       </div>
 
-      {/* 4 Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Invoiced */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <span>Total Invoiced (MTD)</span>
-              <TrendingUp className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              $518,440.00
-            </div>
-            <div className="text-xs text-slate-500 mt-1">
-              Confirmed + Paid across 184 cycles
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              +10.2% vs last MTD
-            </span>
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
-              184 Valid
-            </span>
-          </div>
-        </div>
-
-        {/* Card 2: Collected Capital */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <span>Collected Capital</span>
-              <span className="px-2 py-0.5 rounded-full bg-[#c1f100] text-[#171c20] text-[10px] font-bold">
-                86.1% Rate
-              </span>
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              $446,120.00
-            </div>
-            <div className="text-xs text-slate-500 mt-1">
-              Reconciled via Stripe, ACH & Wire
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-            <div>
-              <div className="text-[10px] text-slate-400 font-medium">Target threshold</div>
-              <div className="text-[11px] font-bold text-emerald-600">+$6,720.00</div>
-            </div>
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
-              Today
-            </span>
-          </div>
-        </div>
-
-        {/* Card 3: Outstanding Balance */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <span>Outstanding Balance</span>
-              <Clock className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              $72,320.00
-            </div>
-            <div className="text-xs text-slate-500 mt-1">
-              Awaiting scheduled auto-debit & terms
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-            <span className="font-semibold text-slate-700">42 Unpaid Invoices</span>
-            <span className="text-slate-500 font-mono">Net-30 avg: 9d Left</span>
-          </div>
-        </div>
-
-        {/* Card 4: Critical Overdue (Obsidian Dark Command Container) */}
-        <div className="bg-[#1e232d] text-white rounded-3xl p-6 shadow-dark-card flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#c1f100]/5 rounded-full blur-2xl pointer-events-none"></div>
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Critical Overdue
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
-                14 Overdue
-              </span>
-            </div>
-            <div className="text-3xl font-extrabold text-[#c1f100] tracking-tight mt-3">
-              $18,420.00
-            </div>
-            <div className="text-xs text-slate-400 mt-1">
-              Due date passed with active balance &gt; $0
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-700/60 flex items-center justify-between">
-            <span className="text-[11px] text-rose-400 font-semibold">2 at Risk</span>
-            <button 
-              onClick={() => setOverdueOnly(true)}
-              className="text-[11px] text-[#c1f100] hover:underline flex items-center gap-0.5 font-bold"
-            >
-              <span>Dunning Step 3</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
+      <DemoMetrics items={[{ label: 'Invoiced this month', value: money(invoiceSummary(invoices).invoiced), hint: 'Issued invoices only; drafts excluded' },{ label: 'Payments received', value: money(invoiceSummary(invoices).collected), hint: 'Sum of the payments on these invoices' },{ label: 'Still to collect', value: money(invoiceSummary(invoices).outstanding), hint: 'Invoice total minus payments' },{ label: 'Overdue', value: money(invoiceSummary(invoices).overdueAmount), hint: 'Balance past the payment due date' }]} />
       {/* Filters and Search Bar Container */}
       <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-card space-y-4">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
@@ -313,7 +210,7 @@ export const InvoicesLedgerView: React.FC<InvoicesLedgerViewProps> = ({
               <span>Overdue Only</span>
             </button>
             <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold">
-              14 Overdue Accounts
+              {invoices.filter(invoice => invoice.status === 'Overdue').length} Overdue Accounts
             </span>
           </div>
         </div>
@@ -328,10 +225,10 @@ export const InvoicesLedgerView: React.FC<InvoicesLedgerViewProps> = ({
               Plan Tier: <span className="font-bold">Enterprise & Scale</span>
             </div>
             <div className="px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-700 font-medium">
-              This Month <span className="font-bold">(Feb 2026)</span>
+              This Month <span className="font-bold">(Oct 2026)</span>
             </div>
             <div className="px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-700 font-medium">
-              Amount: <span className="font-bold">$0 - $50k+</span>
+              Amount: <span className="font-bold">₹0 - ₹50k+</span>
             </div>
             <button 
               onClick={() => {
@@ -561,77 +458,16 @@ export const InvoicesLedgerView: React.FC<InvoicesLedgerViewProps> = ({
         {/* Table Pagination & Server Performance Footer */}
         <div className="p-4 bg-slate-50/70 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <div>
-            Showing <span className="font-bold text-slate-800">1-{filteredInvoices.length}</span> of <span className="font-bold text-slate-800">2,410</span> invoices
+            Showing <span className="font-bold text-slate-800">1-{filteredInvoices.length}</span> of <span className="font-bold text-slate-800">{invoices.length}</span> invoices
             <span className="mx-2">•</span>
-            <span className="font-mono text-[11px]">Server query: 28ms</span>
+            <span className="font-mono text-[11px]">Live data</span>
           </div>
 
-          <div className="flex items-center gap-1">
-            <button 
-              disabled={currentPage === 1}
-              className="px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-600 disabled:opacity-50 font-medium"
-            >
-              Previous
-            </button>
-            <button className="w-7 h-7 rounded-full bg-[#1e232d] text-white font-bold flex items-center justify-center text-xs">
-              1
-            </button>
-            <button className="w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-700 font-semibold flex items-center justify-center text-xs hover:bg-slate-100">
-              2
-            </button>
-            <button className="w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-700 font-semibold flex items-center justify-center text-xs hover:bg-slate-100">
-              3
-            </button>
-            <span className="px-1 text-slate-400">...</span>
-            <button className="w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-700 font-semibold flex items-center justify-center text-xs hover:bg-slate-100">
-              241
-            </button>
-            <button className="px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-600 font-medium hover:bg-slate-50">
-              Next
-            </button>
-          </div>
+          <span>Page 1 of 1 • all matching invoices shown</span>
         </div>
       </div>
 
-      {/* Bottom Service Reliability Strip */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <span>Automated Dunning Run</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-[#c1f100] text-[#171c20] text-[9px] font-bold">
-                ACTIVE
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400 mt-0.5">Scheduled today at 23:59 UTC</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-800">Payment Gateway Latency</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">Stripe + Adyen Direct • <span className="font-mono text-emerald-600 font-bold">142ms Avg</span></div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-800">Compliance & GST Audit</div>
-            <div className="text-[11px] text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> 100% tax checksum passed
-            </div>
-          </div>
-        </div>
-      </div>
+      <p className="text-xs text-slate-500">INR • Amounts include the tax shown on each invoice.</p>
     </div>
   );
 };

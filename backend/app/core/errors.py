@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 from fastapi import FastAPI, Request
+from sqlalchemy.exc import IntegrityError
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -54,6 +55,10 @@ def error_response(
 
 
 def register_exception_handlers(app: FastAPI) -> None:
+    @app.exception_handler(IntegrityError)
+    async def _integrity(_: Request, exc: IntegrityError) -> JSONResponse:
+        return error_response(409, "DATA_CONFLICT", "This change conflicts with an existing record or data constraint")
+
     @app.exception_handler(AppError)
     async def _app_error(_: Request, exc: AppError) -> JSONResponse:
         return error_response(exc.status_code, exc.code, exc.message, exc.details, exc.headers)

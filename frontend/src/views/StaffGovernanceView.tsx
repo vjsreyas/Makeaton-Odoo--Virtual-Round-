@@ -313,7 +313,7 @@ export const StaffGovernanceView: React.FC<StaffGovernanceViewProps> = ({
               </div>
               <div className="flex items-start gap-2 text-slate-200">
                 <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span><strong className="text-white">Fiscal Governance:</strong> Create and override Tax Nexuses, Discounts, & Billing Runs</span>
+                <span><strong className="text-white">Business administration:</strong> Create and override Tax rules, Discounts, & Billing Runs</span>
               </div>
               <div className="flex items-start gap-2 text-slate-200">
                 <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />

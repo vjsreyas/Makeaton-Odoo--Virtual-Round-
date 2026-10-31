@@ -3,6 +3,8 @@ export type NavigationTab =
   | 'invoices'
   | 'invoice-detail'
   | 'subscriptions'
+  | 'customers'
+  | 'plans'
   | 'billing-run'
   | 'payments'
   | 'receivables'
@@ -45,6 +47,7 @@ export interface AuditEvent {
 }
 
 export interface Invoice {
+  uuid?: string;
   id: string; // e.g. #INV-2026-00940
   customerName: string;
   customerEmail: string;
@@ -52,8 +55,8 @@ export interface Invoice {
   customerAddress?: string;
   customerTier?: string;
   subscriptionRef: string; // e.g. #SUB-2026-000123
-  issueDate: string; // e.g. Feb 01, 2026
-  dueDate: string; // e.g. Feb 15, 2026
+  issueDate: string; // e.g. 01 Oct 2026
+  dueDate: string; // e.g. 16 Oct 2026
   terms: string; // e.g. NET-15, NET-30, Auto-debit
   billingType: 'Manual' | 'Recurring / Auto' | 'Usage-Based Run' | 'Mid-cycle Addon' | 'Annual Renewal';
   totalAmount: number;
@@ -74,6 +77,8 @@ export interface Invoice {
 }
 
 export interface Subscription {
+  uuid?: string;
+  actions?: string[];
   id: string; // e.g. #SUB-2026-000123
   version: string; // e.g. v3, rev2
   customerName: string;
@@ -86,7 +91,7 @@ export interface Subscription {
   nextBillingDate: string; // e.g. Apr 01, 2026
   nextBillingInDays?: number;
   status: 'Active' | 'Confirmed' | 'Quotation' | 'Draft' | 'Paused' | 'Closed';
-  cadence: 'Monthly' | 'Annual' | 'Quarterly';
+  cadence: 'Daily' | 'Weekly' | 'Monthly' | 'Annual' | 'Quarterly';
   cadenceValue: number;
   billingMode?: string;
   autoRenew: boolean;
@@ -126,7 +131,7 @@ export interface PaymentEntry {
   planTier: string;
   paymentMethod: string;
   amountSettled: number;
-  status: 'Settled' | 'Partial' | 'Pending';
+  status: 'Settled' | 'Partial' | 'Pending' | 'Voided';
   cardBrand?: string;
   gateway?: string;
 }
@@ -148,6 +153,7 @@ export interface ReceivablesAccount {
 }
 
 export interface ProductVariant {
+  uuid?: string;
   id: string;
   attribute: string;
   value: string;
@@ -156,6 +162,7 @@ export interface ProductVariant {
 }
 
 export interface ProductItem {
+  uuid?: string;
   id: string;
   sku: string;
   name: string;
@@ -169,6 +176,7 @@ export interface ProductItem {
 }
 
 export interface TaxRegime {
+  uuid?: string;
   id: string;
   name: string;
   code: string;
@@ -181,11 +189,12 @@ export interface TaxRegime {
 }
 
 export interface DiscountRule {
+  uuid?: string;
   id: string;
   name: string;
   code: string;
   type: 'percentage' | 'fixed';
-  value: number; // e.g. 15 for 15% or 250 for $250
+  value: number; // e.g. 15 for 15% or 250 for ₹250
   appliesTo: string;
   window: string;
   daysLeft?: number;

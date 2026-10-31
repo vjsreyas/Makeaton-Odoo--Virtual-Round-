@@ -40,7 +40,7 @@ describe('authentication gate', () => {
     await user.type(screen.getByLabelText('Password'), 'Str0ng!Pass9');
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     await screen.findByText('Staff & Roles', { selector: 'span' });
-    expect(mock.calls.map((c) => `${c.method} ${c.path}`)).toEqual(['POST /api/v1/auth/login', 'GET /api/v1/auth/me']);
+    expect(mock.calls.slice(0, 2).map((c) => `${c.method} ${c.path}`)).toEqual(['POST /api/v1/auth/login', 'GET /api/v1/auth/me']);
     expect(mock.calls[1].headers.get('authorization')).toBe('Bearer jwt-1');
     expect(screen.getByTestId('location').textContent).toBe('/app');
     expect(JSON.parse(window.sessionStorage.getItem('brightloop.session')!).token).toBe('jwt-1');
@@ -163,15 +163,7 @@ describe('permission-aware navigation', () => {
     expect(screen.getByText('Business Staff • Acme Cloud')).toBeInTheDocument();
   });
 
-  it('labels mock modules clearly as demo data', async () => {
-    storeToken();
-    installFetch({ 'GET /api/v1/auth/me': { body: { data: ADMIN } } });
-    renderApp('/app');
-    await screen.findByText('Staff & Roles', { selector: 'span' });
-    expect(await screen.findByRole('note')).toHaveTextContent('Demo data.');
-  });
-
-  it('keeps the Team page free of the demo banner', async () => {
+  it('shows the Team page without any banner', async () => {
     storeToken();
     installFetch({
       'GET /api/v1/auth/me': { body: { data: ADMIN } },
@@ -205,11 +197,11 @@ describe('role based routing', () => {
     await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/app'));
   });
 
-  it('shows customers the portal placeholder and keeps them out of the back office', async () => {
+  it('shows customers the portal and keeps them out of the back office', async () => {
     storeToken();
     installFetch({ 'GET /api/v1/auth/me': { body: { data: makeMe('customer', []) } } });
     renderApp('/app');
-    await screen.findByRole('heading', { name: 'Customer portal' });
+    await screen.findByRole('heading', { name: /Welcome, Test/ });
     expect(screen.getByTestId('location').textContent).toBe('/portal');
   });
 

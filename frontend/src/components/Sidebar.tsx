@@ -36,8 +36,8 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   onSelectTab,
-  overdueCount = 14,
-  draftCount = 14,
+  overdueCount = 0,
+  draftCount = 0,
   permissions,
   businessName,
   currency
@@ -46,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navigate = useNavigate();
   const allow = (tab: NavigationTab) => canAccessTab(permissions, tab);
   const showCatalog = allow('products');
-  const showRevenue = ['subscriptions', 'invoices', 'billing-run', 'payments', 'receivables'].some((t) => allow(t as NavigationTab));
+  const showRevenue = ['customers', 'subscriptions', 'invoices', 'billing-run', 'payments', 'receivables'].some((t) => allow(t as NavigationTab));
   const showAdmin = ['discounts', 'taxes', 'staff', 'settings'].some((t) => allow(t as NavigationTab));
   return (
     <aside className="w-64 bg-[#f5faff] border-r border-slate-200/80 flex flex-col justify-between select-none h-full min-h-[calc(100vh-4rem)]">
@@ -114,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
           {canAccessRequirement(permissions, SIDEBAR_ENTRIES.plans) && (
           <button
-            onClick={() => onSelectTab('products')}
+            onClick={() => onSelectTab('plans')}
             className="w-full flex items-center gap-3 px-3.5 py-2 rounded-2xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-all"
           >
             <Bookmark className="w-4 h-4 text-slate-500" />
@@ -139,6 +139,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Revenue Ops
           </div>
+          {allow('customers') && (
+          <button
+            onClick={() => onSelectTab('customers')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all ${
+              currentTab === 'customers'
+                ? 'bg-[#1e232d] text-white shadow-md'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Users className={`w-4 h-4 ${currentTab === 'customers' ? 'text-[#c1f100]' : 'text-slate-500'}`} />
+              <span>Customers</span>
+            </div>
+          </button>
+          )}
           {allow('subscriptions') && (
           <button
             onClick={() => onSelectTab('subscriptions')}
@@ -312,12 +327,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="font-semibold text-slate-700">Sync Engine</span>
           </div>
           <span className="font-mono text-[11px] font-bold text-emerald-700">
-            Demo data
+            Live
           </span>
         </div>
         <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
           <span className="flex items-center gap-1">
-            <Server className="w-3 h-3" /> LOCAL
+            <Server className="w-3 h-3" /> API
           </span>
           <span>v0.1.0</span>
         </div>

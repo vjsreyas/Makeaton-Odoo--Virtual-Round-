@@ -11,6 +11,8 @@ export const TAB_REQUIREMENTS: Record<NavigationTab, TabRequirement> = {
   reports: { anyOf: ['reports.view'] },
   products: { anyOf: ['products.view', 'plans.view', 'quotations.view'] },
   subscriptions: { anyOf: ['subscriptions.view'] },
+  customers: { anyOf: ['customers.view'] },
+  plans: { anyOf: ['plans.view'] },
   invoices: { anyOf: ['invoices.view'] },
   'invoice-detail': { anyOf: ['invoices.view'] },
   'billing-run': { anyOf: ['billing_runs.view'] },
@@ -37,20 +39,6 @@ export function canAccessTab(permissions: readonly string[], tab: NavigationTab)
   return canAccessRequirement(permissions, TAB_REQUIREMENTS[tab]);
 }
 
-export const MOCK_TABS: ReadonlySet<NavigationTab> = new Set<NavigationTab>([
-  'dashboard',
-  'reports',
-  'products',
-  'subscriptions',
-  'invoices',
-  'invoice-detail',
-  'billing-run',
-  'payments',
-  'receivables',
-  'discounts',
-  'taxes',
-  'settings',
-]);
 
 const FIRST_TAB_ORDER: readonly NavigationTab[] = [
   'dashboard',

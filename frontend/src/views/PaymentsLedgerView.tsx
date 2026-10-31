@@ -1,3 +1,5 @@
+import { money } from '../lib/india';
+import { DemoMetrics } from '../components/DemoMetrics';
 import { demoNotice } from '../mock/demo';
 import React, { useState } from 'react';
 import { 
@@ -26,9 +28,9 @@ export const PaymentsLedgerView: React.FC<PaymentsLedgerViewProps> = ({
   onSelectInvoice
 }) => {
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2
     }).format(val);
   };
@@ -47,7 +49,7 @@ export const PaymentsLedgerView: React.FC<PaymentsLedgerViewProps> = ({
             Payments Ledger & Settlement Operations
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Immutable transaction journal, multi-gateway reconciliation (Stripe, Adyen, ACH, UPI, Wire), and Automated audit trail.
+            Payments received by UPI, NEFT, IMPS, debit card or cash, linked to the correct invoice.
           </p>
         </div>
 
@@ -61,7 +63,7 @@ export const PaymentsLedgerView: React.FC<PaymentsLedgerViewProps> = ({
             <span>Report Journal CSV</span>
           </button>
           <button 
-            onClick={() => demoNotice('Batch reconciling 178 settlements... Done! 100% gateway parity.')}
+            onClick={() => demoNotice('Reviewing the sample payments against their invoice references.')}
             className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-full text-xs font-bold text-slate-700 shadow-sm transition-all"
           >
             <RotateCw className="w-3.5 h-3.5" />
@@ -77,84 +79,14 @@ export const PaymentsLedgerView: React.FC<PaymentsLedgerViewProps> = ({
         </div>
       </div>
 
-      {/* 4 Metric Tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1: Total Settled */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Total Settled (MTD)</span>
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              $446,120
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-emerald-600 font-bold">+22.4% MoM</span>
-            <span className="text-slate-400 font-mono">across 178 txns</span>
-          </div>
-        </div>
-
-        {/* Metric 2: Gateway Success Rate */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Gateway Success Rate</span>
-              <CreditCard className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              99.4%
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Avg capture latency: <span className="font-bold font-mono text-emerald-600">142ms</span></span>
-            <span className="text-[10px] text-emerald-700 font-bold">Operational</span>
-          </div>
-        </div>
-
-        {/* Metric 3: Pending Reconciliation */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Pending Reconciliation</span>
-              <RotateCw className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              $8,450
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>3 manual wires</span>
-            <span className="text-slate-400">awaiting bank match</span>
-          </div>
-        </div>
-
-        {/* Metric 4: Reversals & Refunds */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Reversals & Refunds</span>
-              <AlertCircle className="w-4 h-4 text-rose-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-slate-900 tracking-tight mt-3">
-              $1,250
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-rose-600 font-semibold">2 chargebacks resolved</span>
-            <span className="text-[10px] text-emerald-600 font-mono font-bold">Synchronized</span>
-          </div>
-        </div>
-      </div>
-
+      <DemoMetrics items={[{ label: 'Payments received', value: money(payments.reduce((sum, p) => sum + p.amountSettled, 0)), hint: 'Sum of the recorded payments below' },{ label: 'Recorded payments', value: payments.length, hint: 'Each payment links to an invoice' },{ label: 'UPI received', value: money(payments.filter(p => p.paymentMethod === 'UPI').reduce((sum,p) => sum+p.amountSettled,0)), hint: 'Customer payments through UPI' },{ label: 'NEFT received', value: money(payments.filter(p => p.paymentMethod === 'NEFT').reduce((sum,p) => sum+p.amountSettled,0)), hint: 'Domestic bank transfers' }]} />
       {/* Immutable Ledger Entries Table */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-card p-6 space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-slate-900">Immutable Ledger Entries</h2>
             <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
-              178 Records
+              {payments.length} Records
             </span>
           </div>
           <span className="text-xs text-emerald-600 font-mono flex items-center gap-1 font-semibold">
@@ -215,9 +147,9 @@ export const PaymentsLedgerView: React.FC<PaymentsLedgerViewProps> = ({
 
         <div className="p-3 bg-slate-50 rounded-2xl flex items-center justify-between text-xs text-slate-500 font-mono">
           <div>
-            Indexed on <span className="text-slate-800 font-bold">payments(invoice_id)</span> • Query Latency: <span className="text-emerald-700 font-bold">21ms</span>
+            Linked by <span className="text-slate-800 font-bold">payments(invoice_id)</span> • Ledger: <span className="text-emerald-700 font-bold">browser memory</span>
           </div>
-          <div>Showing 1 - 5 of 178</div>
+          <div>Showing {payments.length} recorded payments</div>
         </div>
       </div>
     </div>

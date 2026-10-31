@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     jwt_expires_minutes: int = Field(480, ge=1)
     rate_limit_enabled: bool = True
     seed_demo: bool = False
+    allow_billing_time_travel: bool = False
     outbox_poll_seconds: int = Field(5, ge=1)
     outbox_encryption_key: str
     trusted_proxies: str = ""

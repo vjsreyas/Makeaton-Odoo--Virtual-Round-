@@ -1,4 +1,8 @@
+import { money } from '../lib/india';
+import { DemoMetrics } from '../components/DemoMetrics';
+import { INITIAL_INVOICES } from '../mock/mockData';
 import { demoNotice } from '../mock/demo';
+import { notify } from '../lib/notify';
 import React, { useState } from 'react';
 import { 
   Percent, 
@@ -37,6 +41,7 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>(initialDiscounts[0].type);
   const [value, setValue] = useState(initialDiscounts[0].value);
   const [limit, setLimit] = useState(initialDiscounts[0].usageLimit);
+  const [minQuantity, setMinQuantity] = useState(initialDiscounts[0].minQuantity ?? 1);
   const [minSubtotal, setMinSubtotal] = useState(initialDiscounts[0].minSubtotal);
   const [scope, setScope] = useState(initialDiscounts[0].targetScope);
   const [startDate, setStartDate] = useState(initialDiscounts[0].startDate);
@@ -50,6 +55,7 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
     setValue(r.value);
     setLimit(r.usageLimit);
     setMinSubtotal(r.minSubtotal);
+    setMinQuantity(r.minQuantity ?? 1);
     setScope(r.targetScope);
     setStartDate(r.startDate);
     setEndDate(r.endDate);
@@ -64,6 +70,7 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
       value: Number(value),
       usageLimit: Number(limit),
       minSubtotal: Number(minSubtotal),
+      minQuantity,
       targetScope: scope,
       startDate,
       endDate
@@ -71,11 +78,13 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
     const next = discounts.map(d => d.id === updated.id ? updated : d);
     setDiscounts(next);
     onUpdateDiscount(updated);
-    demoNotice(`Promotion rule ${code} updated and updated in the local demo list.`);
   };
 
   const handleTestRun = () => {
-    demoNotice(`[Simulation Test Run]\nTesting coupon: ${code}\nEligible: YES\nSubtotal: $2,500.00\nDiscount: ${discountType === 'percentage' ? `${value}% (-$${(2500 * value / 100).toFixed(2)})` : `$${value}.00`}\nStatus: Passing Atomic DB Lock Invariant.`);
+    const subtotal = 55600;
+    const eligible = minSubtotal <= subtotal && minQuantity <= 10 && startDate <= '2026-10-31' && endDate >= '2026-10-31' && selectedRule.usageCount < limit;
+    const discount = eligible ? Math.min(subtotal, discountType === 'percentage' ? subtotal * value / 100 : value) : 0;
+    notify(`Example: 10 users, subtotal ${money(subtotal)}. Offer ${code}: ${eligible ? 'eligible' : 'not eligible'}. Discount: ${money(discount)}. Before GST: ${money(subtotal-discount)}. Demo only.`, 'info');
   };
 
   return (
@@ -85,14 +94,14 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-800">
-              REV OPS POLICY ENGINE • ACTIVE_INVARIANTS: OK
+              CUSTOMER OFFERS • OCTOBER 2026
             </span>
           </div>
           <h1 className="text-3xl font-extrabold text-[#171c20] tracking-tight">
             Discounts & Promotional Rules Engine
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Automated coupon rules, atomic usage counters, stackability policies, and line-item promotions.
+            Create sample fixed or percentage offers with dates, minimums and usage limits.
           </p>
         </div>
 
@@ -114,15 +123,15 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
                 type: 'percentage',
                 value: 10,
                 appliesTo: 'Whole subscription',
-                window: 'Valid 30 days',
-                daysLeft: 30,
+                window: '01–30 Nov 2026',
+                daysLeft: 1,
                 usageCount: 0,
-                usageLimit: 250,
-                minSubtotal: 200,
+                usageLimit: 25,
+                minSubtotal: 1000,
                 targetScope: 'Whole Subscription Subtotal',
-                startDate: '2026-03-01',
-                endDate: '2026-03-31',
-                status: 'Active'
+                startDate: '2026-11-01',
+                endDate: '2026-11-30',
+                status: 'Scheduled'
               };
               setDiscounts([...discounts, newD]);
               handleSelectRule(newD);
@@ -135,74 +144,7 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
         </div>
       </div>
 
-      {/* 4 Metric KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Active Rules</span>
-              <Percent className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              8 <span className="text-xs font-normal text-slate-500 font-sans">Active</span>
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 text-xs text-emerald-600 font-semibold font-mono">
-            +$38,420 promo savings MTD
-          </div>
-        </div>
-
-        {/* Card 2 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Total Redemptions</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              1,429 <span className="text-xs font-normal text-slate-500 font-sans">Uses</span>
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
-            <span>84% of total active capacity</span>
-          </div>
-        </div>
-
-        {/* Card 3 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Budget Utilization</span>
-              <span className="font-mono text-slate-400 text-xs font-normal">/ $60,000</span>
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              $42,150
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span>70.2% burn rate</span>
-            <span className="font-bold text-emerald-600 font-mono">$17,850 left</span>
-          </div>
-        </div>
-
-        {/* Card 4 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Expiring / Exhausted</span>
-              <Clock className="w-4 h-4 text-amber-500" />
-            </div>
-            <div className="text-3xl font-extrabold text-amber-600 tracking-tight mt-3">
-              3 <span className="text-xs font-normal text-slate-500 font-sans">Rules</span>
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
-            2 expiring this week, 1 cap reached
-          </div>
-        </div>
-      </div>
-
+      <DemoMetrics items={[{ label: 'Active offers', value: discounts.filter(d => d.status === 'Active').length, hint: 'Valid on the fixed demo date: 31 Oct 2026' },{ label: 'Offers applied', value: discounts.reduce((sum,d) => sum+d.usageCount,0), hint: 'Invoice uses, not number of users' },{ label: 'October savings', value: money(INITIAL_INVOICES.reduce((sum,i) => sum+i.lineItems.reduce((n,l) => n+l.discount,0),0)), hint: 'Discounts before the sample GST calculation' },{ label: 'Upcoming offers', value: discounts.filter(d => d.status === 'Scheduled').length, hint: 'New starter offer begins 01 Nov 2026' }]} />
       {/* Split View: Rules Registry & Rule Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Rules Registry Table (7 cols) */}
@@ -215,7 +157,7 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
                   {discounts.length} total
                 </span>
               </div>
-              <span className="text-xs text-slate-500 font-mono">Policy: GREEDY_SINGLE_HIGHEST</span>
+              <span className="text-xs text-slate-500 font-mono">One offer per scope</span>
             </div>
 
             <div className="overflow-x-auto">
@@ -249,7 +191,7 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
                         </td>
                         <td className="py-4 whitespace-nowrap">
                           <div className="font-mono font-bold text-slate-900 text-sm">
-                            {d.type === 'percentage' ? `${d.value}% off` : `$${d.value}.00 credit`}
+                            {d.type === 'percentage' ? `${d.value}% off` : `₹${d.value}.00 credit`}
                           </div>
                           <div className="text-[10px] text-slate-400">
                             {d.type === 'percentage' ? 'Perpetual Tier' : 'Fixed discount'}
@@ -302,41 +244,7 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
             </div>
           </div>
 
-          {/* Redemption Velocity Bar Chart (Last 7 Days) */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-card p-6 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-slate-700" />
-                <h3 className="text-sm font-bold text-slate-900">Redemption Velocity (Last 7 Days)</h3>
-              </div>
-              <span className="text-[11px] font-mono text-slate-400">Aggregation: Daily</span>
-            </div>
-
-            <div className="flex items-end justify-between gap-3 h-32 pt-2">
-              {[
-                { day: 'Mon', count: 142 },
-                { day: 'Tue', count: 198 },
-                { day: 'Wed', count: 256 },
-                { day: 'Thu', count: 312, peak: true },
-                { day: 'Fri', count: 185 },
-                { day: 'Sat', count: 92 },
-                { day: 'Sun', count: 74 }
-              ].map((item) => (
-                <div key={item.day} className="flex-1 flex flex-col items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold text-slate-600">{item.count}</span>
-                  <div className="w-full flex items-end justify-center h-20">
-                    <div
-                      className={`w-full max-w-[36px] rounded-t-xl transition-all ${
-                        item.peak ? 'bg-[#c1f100]' : 'bg-slate-200'
-                      }`}
-                      style={{ height: `${(item.count / 350) * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-[11px] text-slate-500 font-medium">{item.day}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <div className="bg-white rounded-3xl border p-6 space-y-3"><h3 className="font-bold">October offer examples</h3><p className="text-sm text-slate-500">Lakshmi Traders: 10% off ₹55,600 = ₹5,560. Coimbatore Auto Parts: ₹500 off ₹9,998. GST is calculated after these discounts.</p><p className="text-xs text-slate-400">Both offers end on 31 Oct 2026. November billing previews use the regular prices.</p></div>
         </div>
 
         {/* Right: Dark Rule Inspector (5 cols) */}
@@ -398,7 +306,7 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
                           : 'text-slate-400 hover:text-white'
                       }`}
                     >
-                      $ Fixed
+                      ₹ Fixed
                     </button>
                   </div>
                 </div>
@@ -415,7 +323,7 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
                       className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
-                      {discountType === 'percentage' ? '%' : '$'}
+                      {discountType === 'percentage' ? '%' : '₹'}
                     </span>
                   </div>
                 </div>
@@ -444,7 +352,8 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
                   <label className="block text-slate-400 font-bold mb-1">MIN QUANTITY</label>
                   <input
                     type="number"
-                    defaultValue={1}
+                    value={minQuantity}
+                    onChange={e => setMinQuantity(Number(e.target.value))}
                     className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
                   />
                 </div>
@@ -503,15 +412,14 @@ export const DiscountsView: React.FC<DiscountsViewProps> = ({
             </div>
           </div>
 
-          {/* Atomic Locking Guarantee & Best Single Discount Policy */}
+          {/* Offer rules & Best Single Discount Policy */}
           <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-card space-y-3 text-xs text-slate-600">
             <div className="flex items-start gap-3">
               <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
               <div>
-                <div className="font-bold text-slate-900">Atomic Locking Guarantee</div>
+                <div className="font-bold text-slate-900">Offer rules</div>
                 <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed font-mono">
-                  Server invariant: Engine enforces atomic DB locks via UPDATE usages WHERE used &lt; limit to eliminate race condition over-redemption in concurrent billing batches.
-                </p>
+                  Offer dates, minimums and usage limits decide eligibility. The billing engine applies the best single discount per line and per invoice automatically.</p>
               </div>
             </div>
           </div>

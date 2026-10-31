@@ -1,3 +1,4 @@
+import { INITIAL_INVOICES } from '../mock/mockData';
 import React from 'react';
 import { 
   Search, 
@@ -42,10 +43,10 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="font-bold text-lg tracking-tight text-[#171c20]">Brightloop</span>
         </div>
         <div className="px-2 py-0.5 rounded-full bg-[#c1f100] text-[#171c20] text-[11px] font-bold tracking-wider">
-          v2.4
+          DEMO
         </div>
         <div className="px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 text-[10px] font-semibold tracking-wide uppercase hidden sm:block">
-          REV OPS
+          INDIA • INR
         </div>
       </div>
 
@@ -93,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowNotifs(!showNotifs)}
-            aria-label="Notifications (demo data)"
+            aria-label="Notifications"
             className="w-8 h-8 rounded-full bg-white hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 relative transition-colors"
           >
             <Bell className="w-4 h-4" />
@@ -108,22 +109,22 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-xl p-4 z-50 animate-in fade-in zoom-in-95 duration-100">
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Notifications</span>
-                <span className="text-[11px] text-amber-700 font-medium">Demo data</span>
+                <span className="text-[11px] text-slate-500 font-medium">Latest</span>
               </div>
               <div className="space-y-2 text-xs">
                 <div className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 transition-colors">
                   <div className="flex items-center justify-between font-semibold text-slate-800">
                     <span>Batch Invoicing #RUN-01</span>
-                    <span className="text-[10px] text-slate-400">10m ago</span>
+                    <span className="text-[10px] text-slate-400">01 Oct 2026</span>
                   </div>
-                  <p className="text-slate-500 text-[11px] mt-0.5">184 invoices sealed and queued for auto-settlement.</p>
+                  <p className="text-slate-500 text-[11px] mt-0.5">{INITIAL_INVOICES.filter(invoice => invoice.status !== 'Draft').length} October invoices in the sample billing run.</p>
                 </div>
                 <div className="p-2 rounded-xl bg-amber-50/60 border border-amber-200/50">
                   <div className="flex items-center justify-between font-semibold text-amber-900">
-                    <span>14 Invoices Overdue</span>
-                    <span className="text-[10px] text-amber-700">Stage 1</span>
+                    <span>{INITIAL_INVOICES.filter(invoice => invoice.status === 'Overdue').length} invoices overdue</span>
+                    <span className="text-[10px] text-amber-700">Reminder due</span>
                   </div>
-                  <p className="text-amber-800 text-[11px] mt-0.5">Dunning automated notifications dispatched for Vortex Robotics Ltd.</p>
+                  <p className="text-amber-800 text-[11px] mt-0.5">Lakshmi Traders and Sri Sai Stores have unpaid balances. No real reminders have been sent.</p>
                 </div>
               </div>
             </div>

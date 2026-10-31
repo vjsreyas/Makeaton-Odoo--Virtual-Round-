@@ -16,6 +16,7 @@ x-backend-env: &backend-env
   TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
   RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
   SEED_DEMO: ${SEED_DEMO:-false}
+  ALLOW_BILLING_TIME_TRAVEL: ${ALLOW_BILLING_TIME_TRAVEL:-true}
 
 services:
   db:

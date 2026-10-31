@@ -1,3 +1,7 @@
+import { money } from '../lib/india';
+import { DemoMetrics } from '../components/DemoMetrics';
+import { invoiceSummary } from '../mock/summary';
+import { INITIAL_INVOICES } from '../mock/mockData';
 import { demoNotice } from '../mock/demo';
 import React, { useState } from 'react';
 import { 
@@ -29,7 +33,7 @@ export const TaxesView: React.FC<TaxesViewProps> = ({
   // Form State
   const [name, setName] = useState(initialRegimes[0].name);
   const [rate, setRate] = useState(initialRegimes[0].rate);
-  const [sacCode, setSacCode] = useState(initialRegimes[0].sacHsnCode || '998314');
+  const [sacCode, setSacCode] = useState(initialRegimes[0].sacHsnCode || 'DEMO-SAC');
   const [computationMethod, setComputationMethod] = useState<'Exclusive' | 'Inclusive'>('Exclusive');
   const [dualGstAllocation, setDualGstAllocation] = useState(true);
   const [stateNexus, setStateNexus] = useState('Karnataka (29) - Intra-state [CGST + SGST]');
@@ -63,13 +67,12 @@ export const TaxesView: React.FC<TaxesViewProps> = ({
     const next = regimes.map(r => r.id === updated.id ? updated : r);
     setRegimes(next);
     onUpdateRegimes(next);
-    demoNotice(`Tax regime ${name} updated in the local demo list.`);
   };
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2
     }).format(val);
   };
@@ -81,14 +84,14 @@ export const TaxesView: React.FC<TaxesViewProps> = ({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-800">
-              ENGINE :: REVOPS CORE • SNAPSHOT ENFORCED
+              INDIAN SOFTWARE BILLING • DEMO RULES
             </span>
           </div>
           <h1 className="text-3xl font-extrabold text-[#171c20] tracking-tight">
             Taxes & Jurisdictional Rates
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Autonomous tax calculation matrix, multi-jurisdiction rate schedules (GST, VAT, Sales Tax), and immutable ledger snapshot invariants across past invoices.
+            Tax rules are added on top of the taxable amount on your invoices.
           </p>
         </div>
 
@@ -107,10 +110,10 @@ export const TaxesView: React.FC<TaxesViewProps> = ({
                 id: `tx-${Date.now()}`,
                 code: `TX-CUSTOM-${Math.floor(Math.random() * 900) + 100}`,
                 name: 'New Custom Tax Rule',
-                rate: 10.00,
+                rate: 18.00,
                 type: 'Exclusive',
-                sacHsnCode: '998811',
-                regionalSplitRule: 'Standard Sourcing',
+                sacHsnCode: 'DEMO-SAC',
+                regionalSplitRule: 'Demo software billing',
                 appliesScope: 'Configured accounts'
               };
               setRegimes([...regimes, newRegime]);
@@ -124,80 +127,7 @@ export const TaxesView: React.FC<TaxesViewProps> = ({
         </div>
       </div>
 
-      {/* 4 Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Active Tax Rules</span>
-              <Landmark className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              6 <span className="text-xs font-normal text-slate-500 font-sans">Active Regimes</span>
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 text-xs text-slate-500">
-            Dual domestic & sovereign trade
-          </div>
-        </div>
-
-        {/* Metric 2 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Collected Tax (MTD)</span>
-              <span className="px-2 py-0.5 rounded-full bg-[#c1f100] text-[#171c20] text-[10px] font-bold">
-                +14.2%
-              </span>
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              $82,410.00
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Split: 74% GST, 19% VAT, 7% US</span>
-            <span className="font-mono font-bold text-emerald-600">$11,200 remitted</span>
-          </div>
-        </div>
-
-        {/* Metric 3 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Default System Rate</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              GST 18%
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
-            Dual CGST (9%) + SGST (9%) fallback
-          </div>
-        </div>
-
-        {/* Metric 4 (Dark Obsidian Card) */}
-        <div className="bg-[#1e232d] text-white rounded-3xl p-6 shadow-dark-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
-              <span>Compliance Invariant</span>
-              <ShieldCheck className="w-4 h-4 text-[#c1f100]" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#c1f100] tracking-tight mt-3">
-              100%
-            </div>
-            <div className="text-xs text-slate-400 mt-1">
-              Immutable snapshots on issued invoices
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-700/60 text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Zero mutation vulnerability</span>
-          </div>
-        </div>
-      </div>
-
+      <DemoMetrics items={[{ label: 'Demo tax rules', value: regimes.length, hint: 'Illustrative software billing configuration' },{ label: 'Tax on issued invoices', value: money(invoiceSummary(INITIAL_INVOICES).tax), hint: 'October sample; not a tax filing' },{ label: 'Same-state sale', value: '9% + 9%', hint: 'CGST + SGST in this example' },{ label: 'Other-state sale', value: '18%', hint: 'IGST in this example' }]} />
       {/* Split View: Tax Regimes Table & Editor + Sandbox */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Regimes Table & Precedence (7 cols) */}
@@ -206,7 +136,7 @@ export const TaxesView: React.FC<TaxesViewProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-bold text-slate-900">Configured Tax Regimes</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Frontend precedence list evaluated sequentially during billing dispatch</p>
+                <p className="text-xs text-slate-400 mt-0.5">Select a sample rule to inspect its rate and calculate an example.</p>
               </div>
               <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
                 {regimes.length} Active Rules
@@ -268,60 +198,7 @@ export const TaxesView: React.FC<TaxesViewProps> = ({
             </div>
           </div>
 
-          {/* Dynamic Sourcing Determination */}
-          <div className="p-4 rounded-3xl bg-slate-100/70 border border-slate-200/80 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white text-slate-700 flex items-center justify-center shadow-sm">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-slate-900">Dynamic Sourcing Determination</div>
-                <div className="text-[11px] text-slate-500">
-                  Engine applies origin place of supply for domestic shipments and customer billing jurisdiction for SaaS API licenses.
-                </div>
-              </div>
-            </div>
-            <button 
-              onClick={() => demoNotice('Opening Nexus Management ruleset...')}
-              className="px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold transition-all shadow-sm"
-            >
-              Manage Nexus Rules
-            </button>
-          </div>
-
-          {/* Evaluation Precedence Algorithm */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-card p-6 space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-slate-700" />
-              <span>Evaluation Precedence Algorithm</span>
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-400 font-mono">STAGE 1</span>
-                <div className="font-bold text-slate-900 mt-1">Customer Exemption</div>
-                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                  Checks LUT, Reverse-Charge, or Tax Exemption Certificate on file.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-400 font-mono">STAGE 2</span>
-                <div className="font-bold text-slate-900 mt-1">Product Category</div>
-                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                  Overrides default with category-bound codes (e.g. HSN/SAC special 5%).
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-400 font-mono">STAGE 3</span>
-                <div className="font-bold text-slate-900 mt-1">State Nexus Default</div>
-                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                  Applies standard destination territorial rate matrix with IGST/CGST split.
-                </p>
-              </div>
-            </div>
-          </div>
+          <div className="bg-white rounded-3xl border p-6 space-y-3"><h3 className="font-bold">How this demo calculates tax</h3><p className="text-sm text-slate-500">Apply any discount first. The sample then adds 18% GST to the remaining amount. For the Karnataka examples, show CGST 9% + SGST 9%; for the other-state examples, show IGST 18%.</p><p className="text-xs text-slate-400">Illustrative configuration for the hackathon; these are not tax filing records.</p></div>
         </div>
 
         {/* Right: Tax Rule Editor & Live Sandbox (5 cols) */}
@@ -413,7 +290,7 @@ export const TaxesView: React.FC<TaxesViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Destination State Nexus (Place of Supply)</label>
+                <label className="block text-slate-600 font-bold mb-1">Customer state (Place of supply)</label>
                 <select
                   value={stateNexus}
                   onChange={(e) => setStateNexus(e.target.value)}
@@ -459,9 +336,9 @@ export const TaxesView: React.FC<TaxesViewProps> = ({
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 font-bold mb-1">Test Subtotal Amount (USD / INR Eq.)</label>
+                <label className="block text-slate-400 font-bold mb-1">Test Subtotal Amount (INR)</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono">₹</span>
                   <input
                     type="number"
                     value={testSubtotal}

@@ -1,5 +1,7 @@
-export const DEMO_NOTICE_PREFIX = 'DEMO ONLY - not connected to the backend. Nothing was saved or sent.';
+import { demoNotice as notifyUnavailable } from '../lib/notify';
 
-export function demoNotice(message: string): void {
-  window.alert(`${DEMO_NOTICE_PREFIX}\n\n${message}`);
+export const DEMO_NOTICE_PREFIX = 'This feature is not available yet.';
+
+export function demoNotice(_message?: string): void {
+  notifyUnavailable();
 }

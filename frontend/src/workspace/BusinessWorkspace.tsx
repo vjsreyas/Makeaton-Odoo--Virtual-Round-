@@ -1,407 +1,223 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { biz, type Rec } from '../api/business';
+import { fetchText } from '../api/client';
+import { describeError } from '../api/errors';
+import { loadLiveWorkspace, mapInvoice, methodCode, placeholderDiscount, placeholderProduct, placeholderTax } from '../adapters/liveData';
+import { useAuth } from '../auth/AuthContext';
+import { canAccessTab, firstAccessibleTab } from '../auth/navigation';
+import { can, isBusinessAdmin } from '../auth/permissions';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
-import { DashboardView } from '../views/DashboardView';
-import { InvoicesLedgerView } from '../views/InvoicesLedgerView';
-import { InvoiceDetailView } from '../views/InvoiceDetailView';
-import { SubscriptionsView } from '../views/SubscriptionsView';
-import { BatchBillingRunView } from '../views/BatchBillingRunView';
-import { PaymentsLedgerView } from '../views/PaymentsLedgerView';
-import { ReceivablesView } from '../views/ReceivablesView';
-import { ProductsView } from '../views/ProductsView';
-import { TaxesView } from '../views/TaxesView';
-import { DiscountsView } from '../views/DiscountsView';
-import { RecordPaymentModal } from '../components/modals/RecordPaymentModal';
-import { NewSubscriptionModal } from '../components/modals/NewSubscriptionModal';
-import { CreateManualInvoiceModal } from '../components/modals/CreateManualInvoiceModal';
 import { GlobalSearchModal } from '../components/modals/GlobalSearchModal';
-
-import { workspaceDataSource } from '../adapters/workspaceData';
-import { demoNotice } from '../mock/demo';
-import { useAuth } from '../auth/AuthContext';
-import { MOCK_TABS, canAccessTab, firstAccessibleTab } from '../auth/navigation';
-import { can, isBusinessAdmin } from '../auth/permissions';
-import { MockDataNotice } from '../components/MockDataNotice';
-import { NotAllowed } from '../components/ui/States';
+import { NewSubscriptionModal } from '../components/modals/NewSubscriptionModal';
+import { RecordPaymentModal } from '../components/modals/RecordPaymentModal';
+import { ErrorBlock, LoadingBlock, NotAllowed } from '../components/ui/States';
+import { useAsync } from '../hooks';
+import { notify, Toaster } from '../lib/notify';
+import { CustomersPage } from '../pages/business/CustomersPage';
+import { PlansPage } from '../pages/business/PlansPage';
+import { ReportsPage } from '../pages/business/ReportsPage';
+import { SettingsPage } from '../pages/business/SettingsPage';
 import { TeamPage } from '../pages/business/TeamPage';
+import type { Invoice, NavigationTab, ProductItem, Subscription, TaxRegime, DiscountRule } from '../types';
+import { BatchBillingRunView } from '../views/BatchBillingRunView';
+import { DashboardView } from '../views/DashboardView';
+import { DiscountsView } from '../views/DiscountsView';
+import { InvoiceDetailView } from '../views/InvoiceDetailView';
+import { InvoicesLedgerView } from '../views/InvoicesLedgerView';
+import { PaymentsLedgerView } from '../views/PaymentsLedgerView';
+import { ProductsView } from '../views/ProductsView';
+import { ReceivablesView } from '../views/ReceivablesView';
+import { SubscriptionsView } from '../views/SubscriptionsView';
+import { TaxesView } from '../views/TaxesView';
 
-import {
-  NavigationTab,
-  Invoice,
-  Subscription,
-  PaymentEntry,
-  BillingRunHistory,
-  ProductItem,
-  TaxRegime,
-  DiscountRule
-} from '../types';
-
-const MOCK_LABELS: Partial<Record<NavigationTab, string>> = {
-  dashboard: 'The dashboard',
-  reports: 'Reports',
-  products: 'The product catalog',
-  subscriptions: 'Subscriptions',
-  invoices: 'Invoices',
-  'invoice-detail': 'Invoices',
-  'billing-run': 'Billing runs',
-  payments: 'Payments',
-  receivables: 'Receivables',
-  discounts: 'Discounts',
-  taxes: 'Taxes',
-  settings: 'Settings',
-};
+const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export function BusinessWorkspace() {
   const { me } = useAuth();
   const permissions = me?.permissions ?? [];
-  const initialData = React.useMemo(() => workspaceDataSource.load(), []);
+  const currency = me?.business?.currency ?? 'INR';
   const [currentTab, setCurrentTab] = useState<NavigationTab>(() => firstAccessibleTab(permissions));
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>('#INV-2026-00940');
+  const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [paymentTarget, setPaymentTarget] = useState<Invoice | null | undefined>(undefined);
+  const [newSubOpen, setNewSubOpen] = useState(false);
+  const [version, setVersion] = useState(0);
 
-  // Core Data State
-  const [invoices, setInvoices] = useState<Invoice[]>(initialData.invoices);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>(initialData.subscriptions);
-  const [payments, setPayments] = useState<PaymentEntry[]>(initialData.payments);
-  const [historyRuns, setHistoryRuns] = useState<BillingRunHistory[]>(initialData.billingRunHistory);
-  const [products, setProducts] = useState<ProductItem[]>(initialData.products);
-  const [taxRegimes, setTaxRegimes] = useState<TaxRegime[]>(initialData.taxRegimes);
-  const [discounts, setDiscounts] = useState<DiscountRule[]>(initialData.discounts);
+  const live = useAsync(() => loadLiveWorkspace(permissions, currency), [version]);
+  const data = live.data;
+  const invoiceRow = data?.invoices.find((i) => i.id === selectedInvoice);
+  const detail = useAsync(async () => (invoiceRow?.uuid ? mapInvoice(await biz.invoices.get(invoiceRow.uuid)) : null), [invoiceRow?.uuid, version]);
+  const currentInvoice = detail.data ?? invoiceRow ?? null;
 
-  // Modal visibility
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
-  const [isNewSubscriptionOpen, setIsNewSubscriptionOpen] = useState(false);
-  const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false);
-  const [targetPaymentInvoice, setTargetPaymentInvoice] = useState<Invoice | null>(null);
+  const refresh = () => setVersion((v) => v + 1);
+  const guard = async (task: () => Promise<void>, success?: string) => {
+    try {
+      await task();
+      if (success) notify(success);
+      refresh();
+    } catch (err) {
+      notify(describeError(err), 'error');
+    }
+  };
 
-  // Navigation handlers
-  const handleSelectInvoice = (id: string) => {
-    setSelectedInvoiceId(id);
+  const selectInvoice = (id: string) => {
+    setSelectedInvoice(id);
     setCurrentTab('invoice-detail');
   };
 
-  const handleOpenRecordPaymentForInvoice = (invoice: Invoice) => {
-    setTargetPaymentInvoice(invoice);
-    setIsRecordPaymentOpen(true);
+  const submitPayment = ({ invoiceId, amount, method, methodDetail }: { invoiceId: string; amount: number; method: string; methodDetail: string }) => {
+    const target = data?.invoices.find((i) => i.id === invoiceId);
+    if (!target?.uuid) {
+      notify('Choose an issued invoice to record a payment.', 'error');
+      return;
+    }
+    void guard(async () => {
+      await biz.payments.record(target.uuid!, { method: methodCode(method), amount: amount.toFixed(2), paid_on: todayIso(), reference: methodDetail || null }, undefined);
+    }, `Payment of ${amount.toFixed(2)} recorded against ${invoiceId}.`);
   };
 
-  const handleOpenGenericRecordPayment = () => {
-    setTargetPaymentInvoice(invoices.find(i => i.id === selectedInvoiceId) || invoices[0]);
-    setIsRecordPaymentOpen(true);
+  const invoiceAction = (invoice: Invoice, action: 'confirm' | 'cancel' | 'send' | 'print') => {
+    if (!invoice.uuid) return;
+    if (action === 'print') {
+      void fetchText(`/invoices/${invoice.uuid}/print`)
+        .then((html) => window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank'))
+        .catch((err) => notify(describeError(err), 'error'));
+      return;
+    }
+    if (action === 'cancel' && !window.confirm(`Cancel invoice ${invoice.id}?`)) return;
+    void guard(async () => {
+      if (action === 'confirm') await biz.invoices.confirm(invoice.uuid!);
+      if (action === 'cancel') await biz.invoices.cancel(invoice.uuid!);
+      if (action === 'send') await biz.invoices.send(invoice.uuid!);
+    }, action === 'confirm' ? 'Invoice confirmed.' : action === 'cancel' ? 'Invoice cancelled.' : 'Invoice emailed to the customer.');
   };
 
-  const handleSubmitPayment = ({
-    invoiceId,
-    amount,
-    method,
-    methodDetail
-  }: {
-    invoiceId: string;
-    amount: number;
-    method: string;
-    methodDetail: string;
-  }) => {
-    // 1. Add payment entry
-    const newPayment: PaymentEntry = {
-      id: `#PAY-00${payments.length + 32}`,
-      date: `${new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} • ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`,
-      invoiceRef: invoiceId,
-      customerName: invoices.find(i => i.id === invoiceId)?.customerName || 'Vortex Robotics Ltd',
-      planTier: 'Enterprise Plan',
-      paymentMethod: method,
-      amountSettled: amount,
-      status: 'Settled',
-      gateway: 'Stripe Direct'
-    };
-    setPayments([newPayment, ...payments]);
+  const subscriptionAction = (sub: Subscription, action: string) => {
+    if (!sub.uuid) return;
+    let body: Rec = {};
+    if (action === 'renew') {
+      const next = window.prompt('New expiry date (YYYY-MM-DD)', todayIso().replace(/^\d{4}/, (y) => String(Number(y) + 1)));
+      if (!next) return;
+      body = { expiry_date: next };
+    }
+    if (action === 'close' && !window.confirm(`Close subscription ${sub.id}?`)) return;
+    void guard(async () => {
+      await biz.subscriptions.action(sub.uuid!, action, body);
+    }, `${sub.id}: ${action.replace('-', ' ')} done.`);
+  };
 
-    // 2. Update invoice balance
-    setInvoices(prev => prev.map(inv => {
-      if (inv.id === invoiceId) {
-        const newPaid = inv.paidAmount + amount;
-        const newBal = Math.max(0, inv.totalAmount - newPaid);
-        return {
-          ...inv,
-          paidAmount: newPaid,
-          balanceDue: newBal,
-          status: newBal === 0 ? 'Paid' : inv.status,
-          payments: [
-            ...inv.payments,
-            {
-              id: newPayment.id,
-              date: newPayment.date,
-              method,
-              methodDetail,
-              amount,
-              status: 'Settled',
-              recordedBy: me?.user.full_name ?? 'Current user'
-            }
-          ],
-          auditTrail: [
-            {
-              id: `aud-${Date.now()}`,
-              title: 'Payment Settlement Recorded',
-              description: `Received $${amount.toLocaleString()} via ${method} (${methodDetail}). Recorded by ${me?.user.full_name ?? 'current user'}.`,
-              timestamp: 'Just now',
-              type: 'success'
-            },
-            ...inv.auditTrail
-          ]
-        };
+  const runBilling = async (asOf: string) => {
+    try {
+      const run = await biz.billing.run({ as_of_date: asOf });
+      const failed = Number(run.failed_count);
+      notify(`Billing run finished: ${run.created_count} created, ${run.skipped_count} skipped, ${failed} failed.`, failed ? 'error' : 'success');
+      refresh();
+    } catch (err) {
+      notify(describeError(err), 'error');
+    }
+  };
+
+  const saveProduct = (prod: ProductItem, isNew: boolean) => {
+    void guard(async () => {
+      const base = { name: prod.name, product_type: String(prod.type), sales_price: prod.salesBasePrice.toFixed(2), cost_price: prod.costPrice.toFixed(2), notes: prod.internalNotes || null };
+      if (isNew || !prod.uuid) {
+        await biz.products.create({ ...base, variants: prod.variants.map((v) => ({ attribute: v.attribute, value: v.value, extra_price: v.extraPrice.toFixed(2) })) });
+        return;
       }
-      return inv;
-    }));
+      await biz.products.update(prod.uuid!, base);
+      for (const v of prod.variants) {
+        const body = { attribute: v.attribute, value: v.value, extra_price: v.extraPrice.toFixed(2) };
+        if (v.uuid) await biz.products.updateVariant(v.uuid, body);
+        else await biz.products.createVariant(prod.uuid!, body);
+      }
+    }, 'Product saved.');
   };
 
-  const handleExecuteBatchRun = (newRun: BillingRunHistory) => {
-    setHistoryRuns([newRun, ...historyRuns]);
+  const saveTaxes = (next: TaxRegime[]) => {
+    void guard(async () => {
+      for (const r of next) {
+        const existing = data?.taxRegimes.find((t) => t.id === r.id);
+        if (!existing) await biz.taxRules.create({ name: r.name, rate_percent: Number(r.rate).toFixed(4) });
+        else if (existing.name !== r.name || existing.rate !== r.rate) await biz.taxRules.update(existing.uuid!, { name: r.name, rate_percent: Number(r.rate).toFixed(4) });
+      }
+    }, 'Tax rules saved.');
   };
 
-  const handleUpdateProduct = (prod: ProductItem) => {
-    setProducts(prev => prev.map(p => p.id === prod.id ? prod : p));
+  const saveDiscount = (rule: DiscountRule, isNew: boolean) => {
+    void guard(async () => {
+      const common = { name: rule.name, value: Number(rule.value).toFixed(2), min_purchase_amount: Number(rule.minSubtotal || 0).toFixed(2), min_quantity: Number(rule.minQuantity || 0), starts_on: rule.startDate, ends_on: rule.endDate || null, usage_limit: rule.usageLimit ? Number(rule.usageLimit) : null };
+      if (isNew || !rule.uuid) {
+        const productScope = String(rule.targetScope).toLowerCase().includes('product');
+        await biz.discounts.create({ ...common, discount_type: rule.type, scope: productScope ? 'product' : 'subscription', product_id: productScope ? data?.products[0]?.uuid ?? null : null });
+      } else await biz.discounts.update(rule.uuid!, common);
+    }, 'Discount rule saved.');
   };
 
-  const handleAddProduct = (prod: ProductItem) => {
-    setProducts(prev => [...prev, prod]);
-  };
-
-  const handleUpdateDiscount = (disc: DiscountRule) => {
-    setDiscounts(prev => prev.map(d => d.id === disc.id ? disc : d));
-  };
-
-  const handleAddDiscount = (disc: DiscountRule) => {
-    setDiscounts(prev => [...prev, disc]);
-  };
-
-  // Find current invoice for detail view
-  const currentInvoice = invoices.find(i => i.id === selectedInvoiceId) || invoices[0];
+  const allowed = canAccessTab(permissions, currentTab);
+  const pageTabs = useMemo(() => new Set<NavigationTab>(['staff', 'reports', 'settings', 'customers', 'plans']), []);
+  const needsData = allowed && !pageTabs.has(currentTab);
+  const canPay = can(permissions, 'payments.create');
+  const canManageInvoices = can(permissions, 'invoices.manage');
 
   return (
     <div className="min-h-screen bg-[#f1f5f9] text-[#171c20] flex flex-col font-sans">
-      {/* Global Sticky Header */}
       <Header
-        onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenSearch={() => setSearchOpen(true)}
         onOpenBillingModal={() => setCurrentTab('billing-run')}
-        onOpenNewSubscription={() => setIsNewSubscriptionOpen(true)}
+        onOpenNewSubscription={() => setNewSubOpen(true)}
         canRunBilling={isBusinessAdmin(permissions)}
         canCreateSubscription={can(permissions, 'subscriptions.create')}
-        activeNotificationsCount={2}
+        activeNotificationsCount={0}
       />
-
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Vertical Navigation Sidebar */}
         <Sidebar
           currentTab={currentTab}
           onSelectTab={setCurrentTab}
           permissions={permissions}
           businessName={me?.business?.name ?? 'Business'}
           currency={me?.business?.currency ?? ''}
-          overdueCount={invoices.filter(i => i.status === 'Overdue').length}
-          draftCount={invoices.filter(i => i.status === 'Draft').length}
+          overdueCount={data?.invoices.filter((i) => i.status === 'Overdue').length ?? 0}
+          draftCount={data?.invoices.filter((i) => i.status === 'Draft').length ?? 0}
         />
-
-        {/* Main Central View Area */}
-        <main className="flex-1 overflow-y-auto pb-16">
-          {!canAccessTab(permissions, currentTab) && <NotAllowed />}
-          {canAccessTab(permissions, currentTab) && MOCK_TABS.has(currentTab) && (
-            <MockDataNotice module={MOCK_LABELS[currentTab] ?? 'This module'} />
-          )}
-          {canAccessTab(permissions, currentTab) && (
-          <>
-          {currentTab === 'dashboard' && (
-            <DashboardView
-              onNavigateTab={setCurrentTab}
-              onSelectInvoice={handleSelectInvoice}
-            />
-          )}
-
-          {currentTab === 'invoices' && (
-            <InvoicesLedgerView
-              invoices={invoices}
-              onSelectInvoice={handleSelectInvoice}
-              onCreateManualInvoice={() => setIsCreateInvoiceOpen(true)}
-            />
-          )}
-
-          {currentTab === 'invoice-detail' && currentInvoice && (
-            <InvoiceDetailView
-              invoice={currentInvoice}
-              onBack={() => setCurrentTab('invoices')}
-              onOpenRecordPayment={handleOpenRecordPaymentForInvoice}
-              onNavigateToSubscription={(subId) => {
-                setCurrentTab('subscriptions');
-              }}
-            />
-          )}
-
-          {currentTab === 'subscriptions' && (
-            <SubscriptionsView
-              subscriptions={subscriptions}
-              onOpenNewSubscription={() => setIsNewSubscriptionOpen(true)}
-            />
-          )}
-
-          {currentTab === 'billing-run' && (
-            <BatchBillingRunView
-              queuedItems={initialData.queuedBillingItems}
-              historyRuns={historyRuns}
-              onExecuteBatch={handleExecuteBatchRun}
-            />
-          )}
-
-          {currentTab === 'payments' && (
-            <PaymentsLedgerView
-              payments={payments}
-              onOpenRecordPayment={handleOpenGenericRecordPayment}
-              onSelectInvoice={handleSelectInvoice}
-            />
-          )}
-
-          {currentTab === 'receivables' && (
-            <ReceivablesView
-              accounts={initialData.receivables}
-              onSelectInvoice={handleSelectInvoice}
-            />
-          )}
-
-          {currentTab === 'products' && (
-            <ProductsView
-              products={products}
-              onUpdateProduct={handleUpdateProduct}
-              onAddProduct={handleAddProduct}
-            />
-          )}
-
-          {currentTab === 'taxes' && (
-            <TaxesView
-              taxRegimes={taxRegimes}
-              onUpdateRegimes={setTaxRegimes}
-            />
-          )}
-
-          {currentTab === 'discounts' && (
-            <DiscountsView
-              discounts={discounts}
-              onUpdateDiscount={handleUpdateDiscount}
-              onAddDiscount={handleAddDiscount}
-            />
-          )}
-
-          {currentTab === 'staff' && <TeamPage />}
-
-          {currentTab === 'reports' && (
-            <div className="p-8 max-w-7xl mx-auto space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-extrabold text-[#171c20] tracking-tight">Financial & Invoicing Reports</h1>
-                  <p className="text-sm text-slate-500 mt-1">Exportable GAAP/IFRS ledger ledgers, dunning cadence reports, and cohort churn models.</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { title: 'Tax Nexus Reconciliation (GST/VAT)', desc: 'Full breakdown of CGST, SGST, IGST and EU VAT reverse charge filings.', count: '12 periods' },
-                  { title: 'Dunning & Recovery Velocity', desc: 'Cohort conversion metrics across Stage 1, Stage 2 and Throttling intervals.', count: '98.4% SLA' },
-                  { title: 'Subscription Invariant Audit', desc: 'SHA-256 sealed transaction logs for SOC2 compliance examinations.', count: '2,410 verified' }
-                ].map((r, i) => (
-                  <div key={i} className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card space-y-3">
-                    <h3 className="font-bold text-slate-900">{r.title}</h3>
-                    <p className="text-xs text-slate-500 leading-relaxed">{r.desc}</p>
-                    <div className="pt-2 flex items-center justify-between text-xs">
-                      <span className="font-mono text-emerald-600 font-bold">{r.count}</span>
-                      <button 
-                        onClick={() => demoNotice(`Generated export package for ${r.title}`)}
-                        className="px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold"
-                      >
-                        Download PDF
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {currentTab === 'settings' && (
-            <div className="p-8 max-w-7xl mx-auto space-y-6">
-              <div>
-                <h1 className="text-3xl font-extrabold text-[#171c20] tracking-tight">System & Engine Settings</h1>
-                <p className="text-sm text-slate-500 mt-1">Configure database transaction locks, idempotency keys, and payment gateway webhooks.</p>
-              </div>
-
-              <div className="bg-white rounded-3xl border border-slate-200 shadow-card p-6 space-y-4 max-w-2xl text-xs">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div>
-                    <div className="font-bold text-slate-900">Idempotency Lock TTL</div>
-                    <div className="text-slate-500 text-[11px]">Strict protection against duplicate invoice generation runs</div>
-                  </div>
-                  <span className="font-mono font-bold text-slate-800">120 seconds</span>
-                </div>
-
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div>
-                    <div className="font-bold text-slate-900">Stripe Webhook Signature Verification</div>
-                    <div className="text-slate-500 text-[11px]">HMAC-SHA256 direct authentication</div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">ENFORCED</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-bold text-slate-900">Worker Pool Concurrency</div>
-                    <div className="text-slate-500 text-[11px]">Thread-safe invoice generation workers</div>
-                  </div>
-                  <span className="font-mono font-bold text-[#1e232d] bg-[#c1f100] px-2 py-0.5 rounded-md">8 WORKERS</span>
-                </div>
-              </div>
-            </div>
-          )}
-          </>
+        <main className="flex-1 min-w-0 overflow-y-auto pb-16">
+          {!allowed && <NotAllowed />}
+          {allowed && currentTab === 'staff' && <TeamPage />}
+          {allowed && currentTab === 'reports' && <ReportsPage />}
+          {allowed && currentTab === 'settings' && <SettingsPage />}
+          {allowed && currentTab === 'customers' && <CustomersPage canCreate={can(permissions, 'customers.create')} canUpdate={can(permissions, 'customers.update')} />}
+          {allowed && currentTab === 'plans' && <PlansPage canCreate={can(permissions, 'plans.create')} canUpdate={can(permissions, 'plans.update')} />}
+          {needsData && live.loading && !data && <LoadingBlock label="Loading your data" />}
+          {needsData && Boolean(live.error) && !data && <div className="p-8"><ErrorBlock error={live.error} onRetry={live.reload} /></div>}
+          {needsData && data && (
+            <>
+              {currentTab === 'dashboard' && <DashboardView onNavigateTab={setCurrentTab} invoices={data.invoices} subscriptions={data.subscriptions} onSelectInvoice={selectInvoice} />}
+              {currentTab === 'invoices' && <InvoicesLedgerView invoices={data.invoices} onSelectInvoice={selectInvoice} onCreateManualInvoice={() => notify('Invoices are created automatically by billing runs from active subscriptions.', 'info')} />}
+              {currentTab === 'invoice-detail' && currentInvoice && (
+                <InvoiceDetailView invoice={currentInvoice} onBack={() => setCurrentTab('invoices')} onOpenRecordPayment={setPaymentTarget} onNavigateToSubscription={() => setCurrentTab('subscriptions')} onInvoiceAction={invoiceAction} canManage={canManageInvoices} canPay={canPay} />
+              )}
+              {currentTab === 'subscriptions' && <SubscriptionsView subscriptions={data.subscriptions} onOpenNewSubscription={() => setNewSubOpen(true)} onAction={subscriptionAction} />}
+              {currentTab === 'billing-run' && <BatchBillingRunView queuedItems={data.queuedBillingItems} historyRuns={data.billingRunHistory} onRunBilling={runBilling} canRun={isBusinessAdmin(permissions)} />}
+              {currentTab === 'payments' && <PaymentsLedgerView payments={data.payments} onOpenRecordPayment={() => setPaymentTarget(data.invoices.find((i) => i.balanceDue > 0 && ['Confirmed', 'Overdue'].includes(i.status)) ?? null)} onSelectInvoice={selectInvoice} />}
+              {currentTab === 'receivables' && <ReceivablesView accounts={data.receivables} onSelectInvoice={selectInvoice} />}
+              {currentTab === 'products' && <ProductsView products={data.products.length ? data.products : [placeholderProduct()]} onUpdateProduct={(p) => saveProduct(p, false)} onAddProduct={(p) => saveProduct(p, true)} />}
+              {currentTab === 'taxes' && <TaxesView taxRegimes={data.taxRegimes.length ? data.taxRegimes : [placeholderTax()]} onUpdateRegimes={saveTaxes} />}
+              {currentTab === 'discounts' && <DiscountsView discounts={data.discounts.length ? data.discounts : [placeholderDiscount()]} onUpdateDiscount={(d) => saveDiscount(d, false)} onAddDiscount={(d) => saveDiscount(d, true)} />}
+            </>
           )}
         </main>
       </div>
 
-      {/* Global Interactive Modals */}
-      <GlobalSearchModal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-        invoices={invoices}
-        subscriptions={subscriptions}
-        products={products}
-        onSelectInvoice={handleSelectInvoice}
-        onNavigateTab={setCurrentTab}
-      />
-
-      {isRecordPaymentOpen && (
-        <RecordPaymentModal
-          invoice={targetPaymentInvoice}
-          onClose={() => {
-            setIsRecordPaymentOpen(false);
-            setTargetPaymentInvoice(null);
-          }}
-          onSubmitPayment={handleSubmitPayment}
-        />
+      {data && (
+        <GlobalSearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} invoices={data.invoices} subscriptions={data.subscriptions} products={data.products} onSelectInvoice={selectInvoice} onNavigateTab={setCurrentTab} />
       )}
-
-      {isNewSubscriptionOpen && (
-        <NewSubscriptionModal
-          onClose={() => setIsNewSubscriptionOpen(false)}
-          onCreateSubscription={(newSub) => {
-            setSubscriptions([newSub, ...subscriptions]);
-            demoNotice(`Provisioned ${newSub.customerName} (${newSub.id})!`);
-          }}
-        />
+      {paymentTarget !== undefined && data && (
+        <RecordPaymentModal invoice={paymentTarget} onClose={() => setPaymentTarget(undefined)} onSubmitPayment={submitPayment} />
       )}
-
-      {isCreateInvoiceOpen && (
-        <CreateManualInvoiceModal
-          onClose={() => setIsCreateInvoiceOpen(false)}
-          onCreateInvoice={(newInv) => {
-            setInvoices([newInv, ...invoices]);
-            handleSelectInvoice(newInv.id);
-            demoNotice(`Created manual invoice ${newInv.id} successfully!`);
-          }}
-        />
+      {newSubOpen && data && (
+        <NewSubscriptionModal customers={data.customers} plans={data.plans} products={data.rawProducts} templates={data.templates} onClose={() => setNewSubOpen(false)} onCreated={() => { setNewSubOpen(false); refresh(); }} />
       )}
+      <Toaster />
     </div>
   );
 }

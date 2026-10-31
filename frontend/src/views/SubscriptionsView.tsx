@@ -1,3 +1,6 @@
+import { money } from '../lib/india';
+import { DemoMetrics } from '../components/DemoMetrics';
+import { monthlyRevenue } from '../mock/summary';
 import { demoNotice } from '../mock/demo';
 import React, { useState, useMemo } from 'react';
 import { 
@@ -23,21 +26,23 @@ interface SubscriptionsViewProps {
   subscriptions: Subscription[];
   onSelectSubscription?: (sub: Subscription) => void;
   onOpenNewSubscription: () => void;
+  onAction?: (sub: Subscription, action: string) => void;
 }
 
 export const SubscriptionsView: React.FC<SubscriptionsViewProps> = ({
   subscriptions,
+  onAction,
   onSelectSubscription,
   onOpenNewSubscription
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Draft' | 'Quotation' | 'Confirmed' | 'Active' | 'Paused' | 'Closed'>('All');
-  const [selectedIds, setSelectedIds] = useState<string[]>(['#SUB-2026-000123', '#SUB-2026-000124']);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2
     }).format(val);
   };
@@ -101,86 +106,7 @@ export const SubscriptionsView: React.FC<SubscriptionsViewProps> = ({
         </div>
       </div>
 
-      {/* 4 Metric KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Active Contracts */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Active Contracts</span>
-              <Repeat className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3 flex items-baseline gap-2">
-              <span>1,842</span>
-              <span className="text-xs font-bold text-emerald-600 font-sans">+12.4%</span>
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="font-mono font-bold text-slate-800">+$482,950 MRR</span>
-            <div className="w-16 h-4 bg-emerald-50 rounded flex items-center px-1">
-              <div className="w-full h-1 bg-emerald-500 rounded-full"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Expiring in 30 Days */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Expiring in 30 Days</span>
-              <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold">
-                Urgent
-              </span>
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              38
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-rose-600 font-mono font-bold">$64,200 ARR at risk</span>
-            <span className="w-8 h-1 bg-rose-500 rounded-full"></span>
-          </div>
-        </div>
-
-        {/* Card 3: Quotations Pending */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Quotations Pending</span>
-              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
-                pipeline
-              </span>
-            </div>
-            <div className="text-3xl font-extrabold text-[#171c20] tracking-tight mt-3">
-              19
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Avg cycle: <span className="font-bold text-slate-800">4.2 days</span></span>
-            <span className="font-mono text-slate-400">8 in review</span>
-          </div>
-        </div>
-
-        {/* Card 4: Renewal Rate (Dark Obsidian Card) */}
-        <div className="bg-[#1e232d] text-white rounded-3xl p-6 shadow-dark-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
-              <span>Renewal Rate</span>
-              <span className="text-[#c1f100] text-xs font-bold">+2.1% QoQ</span>
-            </div>
-            <div className="text-3xl font-extrabold text-white tracking-tight mt-3">
-              94.6%
-            </div>
-          </div>
-          <div className="mt-5 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs">
-            <span className="text-slate-400">Tier 1 Target</span>
-            <div className="w-20 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-              <div className="h-full bg-[#c1f100] w-[94.6%] rounded-full"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <DemoMetrics items={[{ label: 'Active subscriptions', value: subscriptions.filter(s => s.status === 'Active').length, hint: 'Currently running customer plans' },{ label: 'Monthly recurring revenue', value: money(monthlyRevenue(subscriptions)), hint: 'Before GST; annual prices divided by 12' },{ label: 'Quotations', value: subscriptions.filter(s => s.status === 'Quotation').length, hint: 'Waiting for the customer to accept' },{ label: 'Paused subscriptions', value: subscriptions.filter(s => s.status === 'Paused').length, hint: 'No billing while paused' }]} />
       {/* Filter and Search Bar */}
       <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-card space-y-4">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
@@ -243,26 +169,26 @@ export const SubscriptionsView: React.FC<SubscriptionsViewProps> = ({
             </span>
             <span className="text-slate-500 text-xs">|</span>
             <span className="text-xs font-mono text-slate-300">
-              {formatCurrency(selectedTotalWeight)} / mo total weight
+              {formatCurrency(selectedTotalWeight)} before GST (selected billing periods)
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => demoNotice(`Paused ${selectedIds.length} subscriptions.`)}
+              onClick={() => subscriptions.filter(x => selectedIds.includes(x.id)).forEach(x => (x.actions ?? []).includes('pause') && onAction?.(x, 'pause'))}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2c3340] hover:bg-[#384152] text-xs font-semibold text-slate-200 transition-colors"
             >
               <Pause className="w-3.5 h-3.5" />
               <span>Bulk Pause</span>
             </button>
             <button 
-              onClick={() => demoNotice(`Dispatched Quotations for ${selectedIds.length} subscriptions.`)}
+              onClick={() => subscriptions.filter(x => selectedIds.includes(x.id)).forEach(x => (x.actions ?? []).includes('send-quotation') && onAction?.(x, 'send-quotation'))}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2c3340] hover:bg-[#384152] text-xs font-semibold text-slate-200 transition-colors"
             >
               <span>Send Quotations</span>
             </button>
             <button 
-              onClick={() => demoNotice(`Bulk renewed ${selectedIds.length} contracts.`)}
+              onClick={() => demoNotice()}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#c1f100] text-[#171c20] text-xs font-extrabold transition-all"
             >
               <RotateCw className="w-3.5 h-3.5" />
@@ -295,6 +221,7 @@ export const SubscriptionsView: React.FC<SubscriptionsViewProps> = ({
                 <th className="py-3.5 px-4">Contract Term</th>
                 <th className="py-3.5 px-4">Next Billing</th>
                 <th className="py-3.5 px-4 text-center">Lifecycle Status</th>
+                <th className="py-3.5 px-4">Actions</th>
                 <th className="py-3.5 pr-6 pl-4 text-right">Cadence / Value</th>
               </tr>
             </thead>
@@ -399,11 +326,16 @@ export const SubscriptionsView: React.FC<SubscriptionsViewProps> = ({
                     </td>
 
                     {/* Cadence / Value */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="flex gap-1.5">{(sub.actions ?? []).map(action => (
+                        <button key={action} onClick={() => onAction?.(sub, action)} className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 capitalize">{action.replace('-', ' ')}</button>
+                      ))}</div>
+                    </td>
                     <td className="py-4 pr-6 pl-4 text-right whitespace-nowrap">
                       <div className="font-mono font-bold text-slate-900 text-sm">
                         {formatCurrency(sub.cadenceValue)}
                       </div>
-                      <div className="text-[10px] text-slate-400">/ monthly base</div>
+                      <div className="text-[10px] text-slate-400">/ {sub.cadence === 'Annual' ? 'year' : sub.cadence === 'Quarterly' ? 'quarter' : 'month'} before GST</div>
                     </td>
                   </tr>
                 );
@@ -415,26 +347,12 @@ export const SubscriptionsView: React.FC<SubscriptionsViewProps> = ({
         {/* Footer */}
         <div className="p-4 bg-slate-50/70 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
           <div>
-            Showing <span className="font-bold text-slate-800">1-{filteredSubs.length}</span> of <span className="font-bold text-slate-800">1,842</span> subscriptions
+            Showing <span className="font-bold text-slate-800">1-{filteredSubs.length}</span> of <span className="font-bold text-slate-800">{subscriptions.length}</span> subscriptions
             <span className="mx-2">•</span>
-            <span className="font-mono text-[11px]">Server latency: 42ms</span>
+            <span className="font-mono text-[11px]">Live data</span>
           </div>
 
-          <div className="flex items-center gap-1">
-            <button className="w-7 h-7 rounded-full bg-[#1e232d] text-white font-bold flex items-center justify-center text-xs">
-              1
-            </button>
-            <button className="w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-700 font-semibold flex items-center justify-center text-xs">
-              2
-            </button>
-            <button className="w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-700 font-semibold flex items-center justify-center text-xs">
-              3
-            </button>
-            <span className="px-1 text-slate-400">...</span>
-            <button className="w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-700 font-semibold flex items-center justify-center text-xs">
-              185
-            </button>
-          </div>
+          <span>Page 1 of 1 • all matching subscriptions shown</span>
         </div>
       </div>
     </div>

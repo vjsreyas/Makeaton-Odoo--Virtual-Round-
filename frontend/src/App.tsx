@@ -10,7 +10,7 @@ import { RegisterPage } from './pages/auth/RegisterPage';
 import { StartPage } from './pages/auth/StartPage';
 import { TokenPasswordPage } from './pages/auth/TokenPasswordPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { PortalPlaceholder } from './pages/PortalPlaceholder';
+import { PortalShell } from './portal/PortalShell';
 import { LoadingScreen } from './components/ui/States';
 
 const BusinessWorkspace = lazy(() => import('./workspace/BusinessWorkspace').then((m) => ({ default: m.BusinessWorkspace })));
@@ -23,6 +23,11 @@ function WorkspaceRoute() {
       <BusinessWorkspace key={`${me?.active_context.type}:${me?.active_context.business_id}`} />
     </Suspense>
   );
+}
+
+function PortalRoute() {
+  const { me } = useAuth();
+  return <PortalShell key={`${me?.active_context.business_id}`} />;
 }
 
 export function AppRoutes() {
@@ -42,6 +47,9 @@ export function AppRoutes() {
         <Route element={<RequireRole roles={['business_admin', 'business_staff']} />}>
           <Route path="/app/*" element={<WorkspaceRoute />} />
         </Route>
+        <Route element={<RequireRole roles={['customer']} />}>
+          <Route path="/portal" element={<PortalRoute />} />
+        </Route>
         <Route element={<ShellLayout />}>
           <Route element={<RequireRole roles={['platform']} />}>
             <Route path="/platform" element={<Navigate to="/platform/businesses" replace />} />
@@ -53,9 +61,6 @@ export function AppRoutes() {
                 </Suspense>
               }
             />
-          </Route>
-          <Route element={<RequireRole roles={['customer']} />}>
-            <Route path="/portal" element={<PortalPlaceholder />} />
           </Route>
           <Route element={<RequireRole roles={['none']} />}>
             <Route path="/start" element={<StartPage />} />

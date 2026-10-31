@@ -1,3 +1,4 @@
+import { money } from '../../lib/india';
 import React, { useState, useEffect } from 'react';
 import { Search, X, Receipt, Repeat, Package, ArrowRight, ShieldCheck, Tag } from 'lucide-react';
 import { Invoice, Subscription, ProductItem, NavigationTab } from '../../types';
@@ -96,7 +97,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     <div className="text-[11px] text-slate-400">{inv.terms} • Due {inv.dueDate}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-slate-900">${inv.balanceDue.toLocaleString()}</span>
+                    <span className="font-mono font-bold text-slate-900">{money(inv.balanceDue)}</span>
                     <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
                   </div>
                 </div>
@@ -125,7 +126,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     <div className="text-[11px] text-slate-400">{sub.planName} • {sub.status}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-slate-900">${sub.cadenceValue.toLocaleString()}/mo</span>
+                    <span className="font-mono font-bold text-slate-900">{money(sub.cadenceValue)}/{sub.cadence === 'Annual' ? 'yr' : 'mo'}</span>
                     <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
                   </div>
                 </div>
@@ -154,7 +155,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     <div className="font-mono text-[11px] text-slate-400">SKU: {prod.sku}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-slate-900">${prod.salesBasePrice.toLocaleString()}</span>
+                    <span className="font-mono font-bold text-slate-900">{money(prod.salesBasePrice)}</span>
                     <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
                   </div>
                 </div>
@@ -164,8 +165,8 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         </div>
 
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-          <span>Navigate with arrows or click to jump</span>
-          <span className="font-mono">Brightloop Fast Index v2.4</span>
+          <span>Click a result to open it</span>
+          <span className="font-mono">Brightloop</span>
         </div>
       </div>
     </div>
